@@ -1,22 +1,22 @@
 <?php
 $host = 'localhost';
-$db   = 'optispace_db';
+$db = 'optispace_airport_db';
 $user = 'root';
-$pass = ''; // Default XAMPP password is empty
+$pass = '';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
 $options = [
-    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    PDO::ATTR_EMULATE_PREPARES   => false,
+    PDO::ATTR_EMULATE_PREPARES => false,
 ];
 
 try {
-     $pdo = new PDO($dsn, $user, $pass, $options);
+    $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (\PDOException $e) {
-     header('Content-Type: application/json');
-     echo json_encode(['error' => 'Database connection failed: ' . $e->getMessage()]);
-     exit;
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Airport SOC Connection Failed: ' . $e->getMessage()]);
+    exit;
 }
 ?>

@@ -1,49 +1,33 @@
 -- Create Database
-CREATE DATABASE IF NOT EXISTS `optispace_db`;
-USE `optispace_db`;
-
--- Vehicle Types Table
-CREATE TABLE IF NOT EXISTS `vehicle_types` (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `name` VARCHAR(50) NOT NULL,
-    `size_rank` INT NOT NULL, -- 1: Small, 2: Medium, 3: Large, 4: XL
-    `hourly_rate` DECIMAL(10, 2) NOT NULL,
-    `co2_savings` DECIMAL(10, 2) NOT NULL -- kg per entry
-);
-
--- Seed Vehicle Types
-INSERT INTO `vehicle_types` (`name`, `size_rank`, `hourly_rate`, `co2_savings`) VALUES
-('Bike', 1, 10.00, 0.50),
-('Car', 2, 20.00, 1.20),
-('SUV', 3, 50.00, 2.50),
-('Bus', 4, 100.00, 5.00);
+CREATE DATABASE IF NOT EXISTS `optispace_airport_db`;
+USE `optispace_airport_db`;
 
 -- Parking Slots Table
 CREATE TABLE IF NOT EXISTS `parking_slots` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `slot_id` VARCHAR(10) NOT NULL,
     `slot_name` VARCHAR(50) NOT NULL,
-    `zone_name` VARCHAR(50) NOT NULL,
-    `size_rank` INT NOT NULL, -- 1: S, 2: M, 3: L, 4: XL
     `status` ENUM('free', 'occupied', 'inefficient') DEFAULT 'free',
-    `current_vehicle_type` INT DEFAULT NULL,
-    `coordinates` TEXT NOT NULL, -- JSON formatted polygon coordinates
-    FOREIGN KEY (`current_vehicle_type`) REFERENCES `vehicle_types`(`id`)
+    `zone_type` ENUM('premium', 'general', 'logistics') NOT NULL,
+    `lat` DECIMAL(10, 8) NOT NULL,
+    `lng` DECIMAL(11, 8) NOT NULL,
+    `current_vehicle` VARCHAR(20) DEFAULT NULL
 );
 
--- Seed Parking Slots (Centered around Kochi 10.055, 76.355)
-INSERT INTO `parking_slots` (`slot_name`, `zone_name`, `size_rank`, `coordinates`) VALUES
-('Slot S1', 'Commuter A', 1, '[[10.0551, 76.3551], [10.0551, 76.3552], [10.0552, 76.3552], [10.0552, 76.3551]]'),
-('Slot S2', 'Commuter A', 1, '[[10.0551, 76.3553], [10.0551, 76.3554], [10.0552, 76.3554], [10.0552, 76.3553]]'),
-('Slot M1', 'General B', 2, '[[10.0553, 76.3551], [10.0553, 76.3552], [10.0554, 76.3552], [10.0554, 76.3551]]'),
-('Slot M2', 'General B', 2, '[[10.0553, 76.3553], [10.0553, 76.3554], [10.0554, 76.3554], [10.0554, 76.3553]]'),
-('Slot XL1', 'Logistics Hub D', 4, '[[10.0555, 76.3551], [10.0555, 76.3554], [10.0557, 76.3554], [10.0557, 76.3551]]');
+-- Seed TRV Terminal 2 Coordinates
+INSERT INTO `parking_slots` (`slot_id`, `slot_name`, `zone_type`, `lat`, `lng`) VALUES
+('A-01', 'Premium SUV Bay 1', 'premium', 8.488100, 76.923100),
+('A-02', 'Premium SUV Bay 2', 'premium', 8.488080, 76.923080),
+('B-01', 'General Parking 1', 'general', 8.488060, 76.923060),
+('B-02', 'General Parking 2', 'general', 8.488040, 76.923040),
+('B-03', 'General Parking 3', 'general', 8.488020, 76.923020),
+('L-01', 'Logistics Bay', 'logistics', 8.487900, 76.922900);
 
--- Global Stats Table
-CREATE TABLE IF NOT EXISTS `simulation_stats` (
+-- Global Stats for SOC
+CREATE TABLE IF NOT EXISTS `soc_stats` (
     `id` INT PRIMARY KEY DEFAULT 1,
-    `total_revenue` DECIMAL(15, 2) DEFAULT 0.00,
-    `total_co2` DECIMAL(15, 2) DEFAULT 0.00
+    `total_entries` INT DEFAULT 0,
+    `alerts_triggered` INT DEFAULT 0
 );
 
-INSERT INTO `simulation_stats` (`id`, `total_revenue`, `total_co2`) VALUES (1, 0.00, 0.00)
-ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO `soc_stats` (`id`) VALUES (1) ON DUPLICATE KEY UPDATE `id`=`id`;
