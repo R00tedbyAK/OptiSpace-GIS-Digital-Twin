@@ -27,7 +27,10 @@ INSERT INTO `parking_slots` (`slot_id`, `slot_name`, `zone_type`, `lat`, `lng`) 
 CREATE TABLE IF NOT EXISTS `soc_stats` (
     `id` INT PRIMARY KEY DEFAULT 1,
     `total_entries` INT DEFAULT 0,
-    `alerts_triggered` INT DEFAULT 0
+    `alerts_triggered` INT DEFAULT 0,
+    `revenue` DECIMAL(15, 2) DEFAULT 0.00,
+    `co2_saved` DECIMAL(15, 2) DEFAULT 0.00
 );
 
-INSERT INTO `soc_stats` (`id`) VALUES (1) ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO `soc_stats` (`id`, `total_entries`, `alerts_triggered`, `revenue`, `co2_saved`) VALUES (1, 0, 0, 0.00, 0.00) 
+ON DUPLICATE KEY UPDATE `id`=`id`;
