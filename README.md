@@ -40,5 +40,16 @@ The dashboard features a split-screen layout:
 - **Right Panel**: Interactive Esri Map with real-time slot statuses.
 - **Bottom Ticker**: Live system status updates and ArcGIS sync status.
 
+
+## 👷 Team Collaboration Guide
+
+Internal tools are available for mapping new parking coordinates:
+
+1.  Open `http://localhost/optispace/tools/maker.php` in your browser.
+2.  **Right-click** on any parking spot on the satellite map.
+3.  Select the **Vehicle Type** and verify the **Slot Name**.
+4.  Click **SAVE COORDINATES**.
+5.  When the mapping session is finished, open `tools/slots.sql`, copy the generated `INSERT` statements, and paste them into your database manager (e.g., phpMyAdmin).
+
 ---
-*Developed for NeST Digital Internship Target.*
+*Enterprise Solutions by NeST Digital.*
