@@ -253,8 +253,10 @@
         }
 
         /* Yellow */
-        .dot-default {
-            background: #0ea5e9;
+        .dot-entrance {
+            background: #fff;
+            color: #000;
+            border: 2px solid var(--accent);
         }
 
         /* Blue */
@@ -395,12 +397,18 @@
                 else if (s.zone === 'general') typeClass = 'dot-car';
                 else if (s.zone === 'logistics') typeClass = 'dot-truck';
 
-                // Extract number from name
-                const number = s.name.split('-')[1] || '?';
+                // Extract number/symbol from name
+                let label = s.name.split('-')[1] || s.name[0] || '?';
+
+                // Special check for Entrance
+                if (s.name.toUpperCase().includes('ENTRANCE')) {
+                    typeClass = 'dot-entrance';
+                    label = 'E';
+                }
 
                 const icon = L.divIcon({
                     className: 'custom-div-icon',
-                    html: `<div class="slot-dot ${typeClass}">${number}</div>`,
+                    html: `<div class="slot-dot ${typeClass}">${label}</div>`,
                     iconSize: [14, 14],
                     iconAnchor: [7, 7]
                 });

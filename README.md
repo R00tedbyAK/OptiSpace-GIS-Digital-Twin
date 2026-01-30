@@ -41,15 +41,30 @@ The dashboard features a split-screen layout:
 - **Bottom Ticker**: Live system status updates and ArcGIS sync status.
 
 
-## 👷 Team Collaboration Guide
+## 👷 Team Collaboration Guide (Data Collection)
 
-Internal tools are available for mapping new parking coordinates:
+Internal tools are available for high-speed mapping of parking coordinates. Use **Smart Map Maker v5.0** for the best experience.
 
-1.  Open `http://localhost/optispace/tools/maker.php` in your browser.
-2.  **Right-click** on any parking spot on the satellite map.
-3.  Select the **Vehicle Type** and verify the **Slot Name**.
-4.  Click **SAVE COORDINATES**.
-5.  When the mapping session is finished, open `tools/slots.sql`, copy the generated `INSERT` statements, and paste them into your database manager (e.g., phpMyAdmin).
+### 🌐 Accessing the Tool
+Open `http://localhost/optispace/tools/maker.php` in your browser.
+
+### 📍 Mapping Workflow (v5.0)
+1.  **Select Zone**: Use the **A-N Grid** in the sidebar to select your target zone. The tool will automatically calculate the next available number (e.g., if A-2 exists, it suggests A-3).
+2.  **Left-Click**: Click anywhere on the map to place a slot.
+3.  **Confirm Type**: A popup appears at your click location. Select the **Vehicle Type** (Car, SUV, Truck, Bike) and click **SAVE**.
+4.  **Sticky Memory**: The tool remembers your vehicle selection for the next click to speed up repetitive mapping.
+
+### 🎨 Visual Legend
+- 🟢 **Green**: Car (General)
+- 🟣 **Purple**: SUV (Premium)
+- 🔴 **Red**: Truck (Logistics)
+- 🟡 **Yellow**: Bike
+- *Numbers are displayed inside each dot for easy identification.*
+
+### 💾 Syncing Data
+1.  When finished, click **DOWNLOAD slots.sql** in the sidebar.
+2.  Import the generated SQL into your local `optispace_db` via phpMyAdmin or the MySQL command line.
+3.  Refresh the main OptiSpace Dashboard to see your new slots live!
 
 ---
 *Enterprise Solutions by NeST Digital.*
