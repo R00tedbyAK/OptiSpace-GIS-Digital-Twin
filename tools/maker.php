@@ -91,6 +91,7 @@
     const ctxInfo = document.getElementById('ctx-info');
     let activeLatLng = null;
     let markers = {};
+    let allSlots = [];
 
     // Initial Load
     async function loadSlots() {
@@ -98,6 +99,7 @@
             const r = await fetch('api.php?action=load');
             const d = await r.json();
             if (d.success) {
+                allSlots = d.slots;
                 renderList(d.slots);
                 drawMarkers(d.slots);
             }
@@ -105,10 +107,8 @@
     }
 
     function drawMarkers(slots) {
-        // Clear existing markers
         Object.values(markers).forEach(m => map.removeLayer(m));
         markers = {};
-
         slots.forEach(s => {
             const m = L.circle([s.lat, s.lng], {
                 radius: 0.8,
@@ -124,7 +124,7 @@
     function renderList(slots) {
         const list = document.getElementById('slot-list');
         list.innerHTML = '';
-        slots.reverse().forEach(s => {
+        [...slots].reverse().forEach(s => {
             const div = document.createElement('div');
             div.className = 'slot-item';
             div.innerHTML = `
@@ -138,8 +138,43 @@
         });
     }
 
-    map.on('contextmenu', (e) => {
+    // Proximity Engine
+    function suggestPrefix(latlng) {
+        let nearest = null;
+        let minDist = 0.0005; // ~50m threshold
+
+        allSlots.forEach(s => {
+            const d = Math.sqrt(Math.pow(s.lat - latlng.lat, 2) + Math.pow(s.lng - latlng.lng, 2));
+            if (d < minDist) {
+                minDist = d;
+                nearest = s;
+            }
+        });
+
+        if (nearest) {
+            const parts = nearest.name.split('-');
+            const prefix = parts[0];
+            document.getElementById('prefix').value = prefix;
+            
+            // Find max for this prefix
+            let maxCount = 0;
+            allSlots.forEach(s => {
+                const sp = s.name.split('-');
+                if (sp[0] === prefix) {
+                    const count = parseInt(sp[1]);
+                    if (!isNaN(count)) maxCount = Math.max(maxCount, count);
+                }
+            });
+            document.getElementById('counter').value = maxCount + 1;
+        }
+    }
+
+    map.on('click', (e) => {
         activeLatLng = e.latlng;
+        
+        // Smart Suggestion
+        suggestPrefix(activeLatLng);
+
         const prefix = document.getElementById('prefix').value;
         const count = document.getElementById('counter').value;
         ctxInfo.innerText = `Add Slot ${prefix}-${count}?`;
@@ -149,7 +184,8 @@
         menu.style.top = e.containerPoint.y + 'px';
     });
 
-    map.on('click', () => { menu.style.display = 'none'; });
+    // Close menu if clicking map elsewhere or dragging
+    map.on('movestart', () => { menu.style.display = 'none'; });
 
     async function saveSlot() {
         const prefix = document.getElementById('prefix').value;
@@ -157,7 +193,6 @@
         const type = document.getElementById('type-select').value;
         const name = `${prefix}-${count}`;
         
-        // Zoning Logic
         let zone = 'general';
         if (type === 'truck') zone = 'logistics';
         else if (type === 'suv') zone = 'premium';
@@ -173,10 +208,10 @@
             const r = await fetch('api.php?action=save', { method: 'POST', body: fd });
             const d = await r.json();
             if (d.success) {
-                // Increment counter
+                // Auto-increment
                 document.getElementById('counter').value = parseInt(count) + 1;
                 menu.style.display = 'none';
-                loadSlots(); // Refresh
+                loadSlots();
             }
         } catch (e) { alert("Save failed"); }
     }
