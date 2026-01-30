@@ -130,6 +130,27 @@ try {
         exit;
     }
 
+    // ---------------------------------------------------------
+    // ACTION: EMERGENCY VACATE (Manual Override)
+    // ---------------------------------------------------------
+    if ($action === 'emergency_vacate') {
+        $slot_name = $_POST['slot_name'] ?? '';
+        if (!$slot_name) {
+            echo json_encode(['status' => 'error', 'message' => 'Slot ID required']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("UPDATE parking_slots SET status='free' WHERE slot_id = ? OR slot_name = ?");
+        $stmt->execute([$slot_name, $slot_name]);
+
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(['status' => 'success', 'message' => "Slot $slot_name CLEARED"]);
+        } else {
+            echo json_encode(['status' => 'error', 'message' => "Slot $slot_name not found or already free"]);
+        }
+        exit;
+    }
+
 } catch (Exception $e) {
     echo json_encode(['status' => 'error', 'message' => 'Server error: ' . $e->getMessage()]);
 }

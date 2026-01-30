@@ -1,134 +1,152 @@
+<?php require 'db_connect.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OptiSpace | Command Simulator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap"
-        rel="stylesheet">
+    <title>OptiSpace | EMERGENCY CONTROLS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron&family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg: #050709;
-            --accent: #00f2ff;
-            --panel: #0d1117;
-        }
-
         body {
-            background: var(--bg);
+            background: #050709;
             color: #fff;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Roboto Mono', monospace;
             display: flex;
-            align-items: center;
             justify-content: center;
-            height: 100vh;
+            align-items: center;
+            min-height: 100vh;
             margin: 0;
         }
 
-        .sim-card {
-            background: var(--panel);
-            border: 2px solid rgba(0, 242, 255, 0.2);
+        .panel {
+            background: rgba(13, 17, 23, 0.9);
+            border: 1px solid rgba(0, 242, 255, 0.3);
             padding: 40px;
-            border-radius: 10px;
-            width: 380px;
+            border-radius: 12px;
+            width: 400px;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.1);
+        }
+
+        h2 {
+            font-family: 'Orbitron';
+            color: #00f2ff;
             text-align: center;
-        }
-
-        h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.1rem;
-            color: var(--accent);
+            font-size: 1.2rem;
             margin-bottom: 30px;
-            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+            padding-bottom: 10px;
         }
 
-        .group {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        button {
-            background: transparent;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            padding: 14px;
-            font-family: 'Orbitron', sans-serif;
-            font-size: 0.75rem;
+        .btn {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: none;
+            border-radius: 4px;
+            font-family: 'Orbitron';
             cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             transition: 0.3s;
         }
 
-        button:hover {
-            background: var(--accent);
+        .btn-entry {
+            background: #00f2ff;
             color: #000;
-            box-shadow: 0 0 15px var(--accent);
         }
 
-        .reset {
-            border-color: #ff3e3e;
-            color: #ff3e3e;
-            margin-top: 20px;
-            font-size: 0.6rem;
+        .btn-entry:hover {
+            background: #fff;
+            box-shadow: 0 0 15px #00f2ff;
         }
 
-        .reset:hover {
-            background: #ff3e3e;
+        .override-section {
+            margin-top: 40px;
+            border: 1px dashed #ff3b3b;
+            padding: 20px;
+            border-radius: 8px;
+            background: rgba(255, 59, 59, 0.05);
+        }
+
+        .override-title {
+            color: #ff3b3b;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #000;
+            border: 1px solid #ff3b3b;
+            color: #fff;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: 'Roboto Mono';
+        }
+
+        .btn-emergency {
+            background: #ff3b3b;
             color: #fff;
         }
 
-        #log {
-            margin-top: 25px;
-            background: #000;
-            padding: 12px;
-            font-family: monospace;
+        .btn-emergency:hover {
+            background: #fff;
+            color: #ff3b3b;
+            box-shadow: 0 0 15px #ff3b3b;
+        }
+
+        #status {
+            text-align: center;
+            margin-top: 20px;
             font-size: 0.7rem;
-            text-align: left;
-            height: 80px;
-            overflow-y: auto;
-            color: #00ff88;
-            border: 1px solid #333;
+            color: #888;
         }
     </style>
 </head>
 
 <body>
-    <div class="sim-card">
-        <h1>OPTISPACE GROUND SIMULATOR</h1>
-        <div class="group">
-            <button onclick="entry('suv')">SUV Arrival (Premium)</button>
-            <button onclick="entry('car')">Car Arrival (General)</button>
-            <button onclick="entry('truck')">Truck Arrival (Logistics)</button>
-            <button onclick="entry('bike')" style="border-color:#eab308; color:#eab308;">Bike Arrival
-                (2-Wheeler)</button>
+    <div class="panel">
+        <h2>CMD // SIMULATOR</h2>
+        <button class="btn btn-entry" onclick="simEntry('car')">Standard Car Arrival</button>
+        <button class="btn btn-entry" onclick="simEntry('suv')">SUV Fitment Arrival</button>
+        <button class="btn btn-entry" onclick="simEntry('truck')">Logistics Arrival</button>
+        <button class="btn btn-entry" onclick="simEntry('bike')">Bike Arrival</button>
+
+        <div class="override-section">
+            <span class="override-title">⚠ MANUAL SYSTEM OVERRIDE</span>
+            <input type="text" id="slot_id" placeholder="ENTER SLOT ID (e.g., A-05)">
+            <button class="btn btn-emergency" onclick="emergencyVacate()">EMERGENCY VACATE</button>
         </div>
-        <button class="reset" onclick="resetSim()">RESET ALL SYSTEMS</button>
-        <div id="log">> STANDBY...</div>
+
+        <div id="status">READY FOR SECTOR COMMS</div>
     </div>
 
     <script>
-        const logBox = document.getElementById('log');
-
-        function print(msg, color = '#00ff88') {
-            const div = document.createElement('div');
-            div.style.color = color;
-            div.innerText = `> ${new Date().toLocaleTimeString()}: ${msg}`;
-            logBox.prepend(div);
+        async function simEntry(type) {
+            const formData = new FormData();
+            formData.append('vehicle_type', type);
+            const res = await fetch('logic.php?action=entry', { method: 'POST', body: formData });
+            const data = await res.json();
+            document.getElementById('status').innerText = data.message.toUpperCase();
+            setTimeout(() => document.getElementById('status').innerText = 'READY', 2000);
         }
 
-        async function entry(type) {
-            const form = new FormData();
-            form.append('vehicle_type', type);
-            try {
-                const r = await fetch('logic.php?action=entry', { method: 'POST', body: form });
-                const d = await r.json();
-                print(d.message, d.success ? '#00ff88' : '#ff3e3e');
-            } catch (e) { print("COMM FAIL", "#ff3e3e"); }
-        }
+        async function emergencyVacate() {
+            const slotId = document.getElementById('slot_id').value;
+            if (!slotId) return alert("SLOT ID REQUIRED");
 
-        async function resetSim() {
-            await fetch('logic.php?action=reset');
-            print("SIMULATION RESET", "#ff3e3e");
+            const formData = new FormData();
+            formData.append('slot_name', slotId);
+            const res = await fetch('logic.php?action=emergency_vacate', { method: 'POST', body: formData });
+            const data = await res.json();
+            document.getElementById('status').innerText = data.message.toUpperCase();
+            document.getElementById('slot_id').value = '';
+            setTimeout(() => document.getElementById('status').innerText = 'READY', 2000);
         }
     </script>
 </body>
