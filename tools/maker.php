@@ -82,10 +82,6 @@
                 <option value="truck">Truck (Logistics)</option>
                 <option value="bike">Bike</option>
             </select>
-            
-            <label style="font-size: 0.75rem; color: #94a3b8; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                <input type="checkbox" id="auto-detect" checked style="width: auto; flex: none;"> Auto-Detect Nearby Zone
-            </label>
         </div>
         
         <div class="slot-list" id="slot-list">
@@ -128,7 +124,6 @@
     const mainTypeSelect = document.getElementById('type-select');
     const prefixInput = document.getElementById('prefix');
     const counterInput = document.getElementById('counter');
-    const autoDetectCheck = document.getElementById('auto-detect');
 
     let activeLatLng = null;
     let markers = {};
@@ -150,7 +145,6 @@
     });
 
     function setZone(z) {
-        console.log("Switching to Zone:", z);
         document.querySelectorAll('.zone-btn').forEach(b => b.classList.toggle('active', b.innerText === z));
         prefixInput.value = z;
         updateCounterForPrefix(z);
@@ -166,7 +160,6 @@
             }
         });
         counterInput.value = maxCount + 1;
-        console.log("Updated counter for", p, "to", counterInput.value);
     }
 
     async function loadSlots() {
@@ -206,33 +199,11 @@
         });
     }
 
-    function suggestNearby(latlng) {
-        if (!autoDetectCheck.checked) return;
-        
-        let nearest = null;
-        let minDist = 0.0004; // ~40m
-
-        allSlots.forEach(s => {
-            const d = Math.sqrt(Math.pow(s.lat - latlng.lat, 2) + Math.pow(s.lng - latlng.lng, 2));
-            if (d < minDist) { minDist = d; nearest = s; }
-        });
-
-        if (nearest) {
-            const p = nearest.name.split('-')[0];
-            if (p !== prefixInput.value) {
-                setZone(p);
-            }
-        }
-    }
-
     map.on('click', (e) => {
         activeLatLng = e.latlng;
-        suggestNearby(activeLatLng);
-
         const prefix = prefixInput.value;
         const count = counterInput.value;
         ctxTitle.innerText = `NEW SLOT: ${prefix}-${count}`;
-        
         ctxTypeSelect.value = mainTypeSelect.value;
         
         menu.style.display = 'block';
@@ -263,7 +234,7 @@
             const d = await r.json();
             if (d.success) {
                 menu.style.display = 'none';
-                await loadSlots(); // Refresh counts and list
+                await loadSlots();
             }
         } catch (e) { alert("Save failed"); }
     }
