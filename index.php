@@ -317,8 +317,8 @@
     <script>
         // Init Map - Locked and Focused
         const map = L.map('map', {
-            center: [8.488533, 76.921948],
-            zoom: 20,
+            center: [8.488000, 76.923000],
+            zoom: 19,
             zoomControl: false,
             attributionControl: false,
             scrollWheelZoom: false,
