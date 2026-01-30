@@ -39,7 +39,7 @@
             width: 100vw;
             height: 100vh;
             z-index: 1;
-            pointer-events: none;
+            pointer-events: auto;
         }
 
         .hud {
@@ -262,6 +262,8 @@
         }
 
         /* --- ANIMATIONS --- */
+        .data-trail { opacity: 0.3; }
+        .data-packet { filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 8px var(--accent)); }
         .laser-beam {
             stroke-dasharray: 8;
             animation: dash 0.8s linear infinite;
@@ -430,24 +432,29 @@
         function fireEntryAnimation(slot) {
             const start = L.latLng(GATE);
             const end = L.latLng(slot.lat, slot.lng);
-            const beam = L.polyline([start, end], { color: '#00f2ff', weight: 2, className: 'laser-beam' }).addTo(map);
-            const dot = L.circleMarker(start, { radius: 4, fillColor: '#fff', color: '#00f2ff', fillOpacity: 1 }).addTo(map);
+            const trail = L.polyline([start, start], { color: 'var(--accent)', weight: 1, className: 'data-trail' }).addTo(map);
+            const packet = L.circleMarker(start, { radius: 3, fillColor: '#fff', color: '#fff', fillOpacity: 1, className: 'data-packet' }).addTo(map);
 
             let p = 0;
-            const anim = () => {
-                p += 0.05;
+            const startTime = performance.now();
+            const duration = 1200; // 1.2s smooth glide
+
+            const anim = (time) => {
+                p = (time - startTime) / duration;
                 if (p <= 1) {
-                    dot.setLatLng([start.lat + (end.lat - start.lat) * p, start.lng + (end.lng - start.lng) * p]);
+                    const currentPos = [start.lat + (end.lat - start.lat) * p, start.lng + (end.lng - start.lng) * p];
+                    packet.setLatLng(currentPos);
+                    trail.setLatLngs([start, currentPos]);
                     requestAnimationFrame(anim);
                 } else {
-                    map.removeLayer(beam); map.removeLayer(dot);
+                    map.removeLayer(trail); map.removeLayer(packet);
                     slotMarkers[slot.slot_id].m.setStyle({ fillColor: '#FF0000', color: '#FF0000' });
                     slot.status = 'occupied';
                     pushLog(`${slot.slot_name} : ALLOCATED`);
                     updateHUD();
                 }
             };
-            anim();
+            requestAnimationFrame(anim);
         }
 
         function fireExitAnimation(slot) {
