@@ -4,20 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OptiSpace | TRV Airport SOC</title>
+    <title>OptiSpace | SOC Command Dashboard</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link
         href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;600&display=swap"
         rel="stylesheet">
     <style>
         :root {
-            --bg: #030507;
-            --panel: rgba(8, 12, 16, 0.95);
+            --bg: #05080a;
+            --panel: rgba(10, 20, 30, 0.9);
             --accent: #00f2ff;
             --danger: #ff3e3e;
             --warning: #ffbe00;
             --success: #00ff88;
-            --border: rgba(0, 242, 255, 0.25);
+            --border: rgba(0, 242, 255, 0.3);
         }
 
         body,
@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        .soc-container {
+        .main-container {
             display: flex;
             height: calc(100vh - 30px);
             width: 100%;
@@ -46,19 +46,17 @@
             flex-direction: column;
         }
 
-        .panel-header {
+        .feed-header {
             background: var(--panel);
-            padding: 12px;
+            padding: 10px;
             font-family: 'Orbitron', sans-serif;
             font-size: 0.7rem;
             color: var(--accent);
             border-bottom: 1px solid var(--border);
-            letter-spacing: 1px;
         }
 
-        .cctv-feed {
+        .video-box {
             flex: 1;
-            background: #080808;
             position: relative;
             overflow: hidden;
         }
@@ -67,26 +65,24 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: grayscale(0.4) brightness(0.8);
-            opacity: 0.7;
+            opacity: 0.6;
+            filter: grayscale(0.5);
         }
 
-        .scanline {
+        .scan-line {
             position: absolute;
             top: 0;
-            left: 0;
             width: 100%;
             height: 2px;
-            background: rgba(0, 242, 255, 0.15);
+            background: rgba(0, 242, 255, 0.2);
             box-shadow: 0 0 10px var(--accent);
-            animation: scan 6s linear infinite;
+            animation: scan 4s linear infinite;
             pointer-events: none;
-            z-index: 10;
         }
 
         @keyframes scan {
             from {
-                top: 0%
+                top: 0
             }
 
             to {
@@ -106,20 +102,22 @@
             background: #000;
         }
 
-        /* Overlay Elements */
-        .soc-header {
+        /* Overlays */
+        .branding {
             position: absolute;
             top: 15px;
             left: 15px;
             z-index: 1000;
             font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: var(--accent);
             background: var(--panel);
             padding: 10px 20px;
             border: 1px solid var(--border);
-            border-left: 5px solid var(--accent);
+            letter-spacing: 2px;
         }
 
-        .overlay-right {
+        .telemetry {
             position: absolute;
             top: 15px;
             right: 15px;
@@ -127,52 +125,32 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
-            width: 200px;
         }
 
-        .stat-box {
+        .stat-card {
             background: var(--panel);
             border: 1px solid var(--border);
             padding: 12px;
             border-radius: 4px;
+            width: 180px;
             backdrop-filter: blur(5px);
         }
 
-        .stat-box h3 {
+        .stat-card h3 {
             margin: 0;
             font-size: 0.6rem;
             color: #888;
             text-transform: uppercase;
         }
 
-        .stat-box .val {
+        .stat-card .val {
             font-family: 'Orbitron', sans-serif;
             font-size: 1.4rem;
             color: var(--accent);
             margin-top: 5px;
         }
 
-        .lidar-btn {
-            background: var(--accent);
-            color: #000;
-            border: none;
-            padding: 12px;
-            border-radius: 4px;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: bold;
-            font-size: 0.7rem;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
-        }
-
-        .lidar-btn:hover {
-            background: #fff;
-            box-shadow: 0 0 25px var(--accent);
-            transform: translateY(-2px);
-        }
-
-        .soc-ticker {
+        .ticker {
             height: 30px;
             background: #000;
             border-top: 1px solid var(--border);
@@ -184,33 +162,31 @@
             color: var(--accent);
         }
 
-        .ticker-mover {
+        .ticker-wrap {
             white-space: nowrap;
             padding-left: 100%;
-            animation: move 25s linear infinite;
+            animation: ticker 30s linear infinite;
         }
 
-        @keyframes move {
-            from {
+        @keyframes ticker {
+            0% {
                 transform: translateX(0);
             }
 
-            to {
+            100% {
                 transform: translateX(-100%);
             }
         }
 
-        /* Legend */
         .legend {
             position: absolute;
             bottom: 20px;
             right: 20px;
             z-index: 1000;
             background: var(--panel);
-            border: 1px solid var(--border);
             padding: 10px;
+            border: 1px solid var(--border);
             font-size: 0.7rem;
-            border-radius: 4px;
         }
 
         .l-item {
@@ -229,96 +205,109 @@
 </head>
 
 <body>
-    <div class="soc-container">
+    <div class="branding">OPTISPACE // SOC</div>
+
+    <div class="main-container">
         <div class="left-panel">
-            <div class="panel-header">TRV-AIRPORT // CCTV_T2</div>
-            <div class="cctv-feed">
-                <div class="scanline"></div>
-                <!-- Placeholder loop video from mixkit -->
-                <video autoplay muted loop playsinline
-                    src="https://assets.mixkit.co/videos/preview/mixkit-security-camera-at-the-entrance-of-a-toll-road-33825-large.mp4"></video>
+            <div class="feed-header">LIVE FEED | CAM-01</div>
+            <div class="video-box">
+                <div class="scan-line"></div>
+                <video autoplay muted loop playsinline src="parking_loop.mp4">
+                    Your browser does not support the video tag.
+                </video>
             </div>
         </div>
+
         <div class="right-panel">
-            <div class="soc-header">TRV TERMINAL 2 DASHBOARD</div>
             <div id="map"></div>
 
-            <div class="overlay-right">
-                <div class="stat-box">
-                    <h3>Operational Load</h3>
-                    <div class="val" id="entries">0</div>
+            <div class="telemetry">
+                <div class="stat-card">
+                    <h3>Operational Revenue</h3>
+                    <div class="val" id="revenue">₹0.00</div>
                 </div>
-                <div class="stat-box">
-                    <h3>Security Alerts</h3>
-                    <div class="val" id="alerts" style="color: var(--danger);">0</div>
+                <div class="stat-card">
+                    <h3>CO2 Emissions Saved</h3>
+                    <div class="val" id="co2">0.00 kg</div>
                 </div>
-                <button class="lidar-btn"
-                    onclick="alert('NeST Cloud: LiDAR Integration Initializing... [Access Denied]')">
-                    LOAD LiDAR 3D VIEW
-                </button>
             </div>
 
             <div class="legend">
                 <div class="l-item"><span class="dot" style="background:var(--success)"></span> Secure (Free)</div>
                 <div class="l-item"><span class="dot" style="background:var(--danger)"></span> Active (Occupied)</div>
-                <div class="l-item"><span class="dot" style="background:var(--warning)"></span> Audit (Inefficient)
-                </div>
             </div>
         </div>
     </div>
-    <div class="soc-ticker">
-        <div class="ticker-mover">
-            CONNECTED TO NeST DATA LAKE... SYNCING TRV TERMINAL 2 GROUND LOGISTICS... ESRI ARCGIS SERVICES
-            OPERATIONAL... MONITORING GEOFENCE ALPHA... ZONE L PROTOCOLS ACTIVE...
+
+    <div class="ticker">
+        <div class="ticker-wrap">
+            CONNECTED TO ESRI ARCGIS SERVICES... SYNCING TRV GROUND LOGISTICS DATA... STATUS: OPTIMAL... ENFORCING
+            GEOFENCE PROTOCOLS...
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const imagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 });
-        const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 20 });
+        // ESRI Layers
+        const worldImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
+        const worldLabels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 });
 
-        const map = L.map('map', { center: [8.488000, 76.923000], zoom: 19, zoomControl: false, layers: [imagery, labels] });
+        const map = L.map('map', {
+            center: [8.488000, 76.923000],
+            zoom: 19,
+            zoomControl: false,
+            attributionControl: false,
+            layers: [worldImagery, worldLabels]
+        });
 
-        let markers = {};
+        let polygons = {};
 
-        function updateSOC() {
-            fetch('logic.php?action=get_status')
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('entries').innerText = data.stats.total_entries;
-                    document.getElementById('alerts').innerText = data.stats.alerts_triggered;
+        async function updateDashboard() {
+            try {
+                const response = await fetch('logic.php?action=fetch_status');
+                const data = await response.json();
 
-                    data.slots.forEach(slot => {
-                        const color = slot.status === 'free' ? '#00ff88' : (slot.status === 'occupied' ? '#ff3e3e' : '#ffbe00');
+                if (!data || !data.stats) {
+                    console.warn("Invalid telemetry data received");
+                    return;
+                }
 
-                        if (markers[slot.id]) {
-                            markers[slot.id].setStyle({ fillColor: color, color: color });
-                        } else {
-                            // Circular representation for slots in TRV
-                            const marker = L.circle([slot.lat, slot.lng], {
-                                radius: 1,
-                                fillColor: color,
-                                fillOpacity: 0.6,
-                                color: color,
-                                weight: 2
-                            }).addTo(map);
+                document.getElementById('revenue').innerText = '₹' + data.stats.revenue.toFixed(2);
+                document.getElementById('co2').innerText = data.stats.co2_saved.toFixed(2) + ' kg';
 
-                            marker.bindPopup(`
-                                <div style="font-family:'Orbitron'; font-size:0.75rem; color:#00f2ff;">
-                                    <b>${slot.slot_id}</b><br>
-                                    <span style="color:#888;">Zone:</span> ${slot.zone_type.toUpperCase()}<br>
-                                    <span style="color:#888;">Vehicle:</span> ${slot.current_vehicle || 'NONE'}
-                                </div>
-                            `);
-                            markers[slot.id] = marker;
-                        }
-                    });
+                data.slots.forEach(slot => {
+                    const color = slot.status === 'free' ? '#00ff88' : '#ff3e3e';
+
+                    if (polygons[slot.id]) {
+                        polygons[slot.id].setStyle({ fillColor: color, color: color });
+                    } else {
+                        // Using precise circle markers for TRV layout
+                        const marker = L.circle([slot.lat, slot.lng], {
+                            radius: 1,
+                            fillColor: color,
+                            fillOpacity: 0.6,
+                            color: color,
+                            weight: 2
+                        }).addTo(map);
+
+                        marker.bindPopup(`
+                            <div style="font-family:'Orbitron'; font-size:0.8rem; color:var(--accent);">
+                                <b>${slot.slot_id}</b><br>
+                                <span style="color:#888;">Zone:</span> ${slot.zone_type.toUpperCase()}<br>
+                                <span style="color:#888;">Status:</span> ${slot.status.toUpperCase()}
+                            </div>
+                        `);
+                        polygons[slot.id] = marker;
+                    }
                 });
+
+            } catch (err) {
+                console.error("Dashboard Sync Error:", err);
+            }
         }
 
-        setInterval(updateSOC, 2000);
-        updateSOC();
+        setInterval(updateDashboard, 2000);
+        updateDashboard();
     </script>
 </body>
 

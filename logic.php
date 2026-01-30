@@ -1,91 +1,87 @@
 <?php
+error_reporting(0);
+ini_set('display_errors', 0);
 require_once 'db_connect.php';
 header('Content-Type: application/json');
 
-$action = $_GET['action'] ?? '';
+try {
+    $action = $_GET['action'] ?? '';
 
-if ($action === 'get_status') {
-    $slots = $pdo->query("SELECT * FROM parking_slots")->fetchAll();
-    $stats = $pdo->query("SELECT * FROM soc_stats WHERE id = 1")->fetch();
-    echo json_encode(['slots' => $slots, 'stats' => $stats]);
-    exit;
-}
+    if ($action === 'fetch_status' || $action === 'get_status') {
+        $slots = $pdo->query("SELECT * FROM parking_slots")->fetchAll();
+        $stats = $pdo->query("SELECT * FROM soc_stats WHERE id = 1")->fetch();
 
-if ($action === 'enter') {
-    $vehicle_type = strtolower($_POST['vehicle_type'] ?? '');
-
-    // Strict Geofencing Rules
-    $target_zone = '';
-    $status_override = 'occupied';
-
-    if ($vehicle_type === 'bus' || $vehicle_type === 'truck') {
-        // MUST go to Zone L
-        $target_zone = 'logistics';
-    } elseif ($vehicle_type === 'suv') {
-        // Preferred Zone A
-        $target_zone = 'premium';
-    } elseif ($vehicle_type === 'car') {
-        // Preferred Zone B
-        $target_zone = 'general';
-    } elseif ($vehicle_type === 'bike') {
-        // Bikes can take General, but if they take Premium -> Inefficient
-        $target_zone = 'any';
+        echo json_encode([
+            'slots' => $slots,
+            'stats' => [
+                'total_entries' => (int) $stats['total_entries'],
+                'revenue' => (float) $stats['revenue'],
+                'co2_saved' => (float) $stats['co2_saved']
+            ]
+        ]);
+        exit;
     }
 
-    // Logic for Bus/Truck (Restriction)
-    if ($vehicle_type === 'bus' || $vehicle_type === 'truck') {
-        $stmt = $pdo->prepare("SELECT * FROM parking_slots WHERE status = 'free' AND zone_type = 'logistics' LIMIT 1");
-        $stmt->execute();
-        $slot = $stmt->fetch();
+    if ($action === 'entry') {
+        $vehicle_type = strtolower($_POST['vehicle_type'] ?? '');
+        $fee = 0;
+        $co2 = 0;
+        $status = 'occupied';
 
-        if (!$slot) {
-            echo json_encode(['success' => false, 'message' => 'ACCESS DENIED: Logistics Bay L Full. Heavy vehicles restricted from other zones.']);
-            exit;
-        }
-    } else {
-        // Standard search for other vehicles
-        if ($target_zone === 'premium') {
+        // Zoning and Pricing
+        if ($vehicle_type === 'truck' || $vehicle_type === 'bus') {
+            $stmt = $pdo->prepare("SELECT * FROM parking_slots WHERE status = 'free' AND zone_type = 'logistics' LIMIT 1");
+            $fee = 250;
+            $co2 = 6.0;
+        } elseif ($vehicle_type === 'suv') {
             $stmt = $pdo->prepare("SELECT * FROM parking_slots WHERE status = 'free' AND zone_type = 'premium' LIMIT 1");
-        } elseif ($target_zone === 'general') {
-            $stmt = $pdo->prepare("SELECT * FROM parking_slots WHERE status = 'free' AND zone_type = 'general' LIMIT 1");
+            $fee = 100;
+            $co2 = 3.0;
         } else {
-            // Bike or fallback: Find first available
-            $stmt = $pdo->prepare("SELECT * FROM parking_slots WHERE status = 'free' ORDER BY zone_type ASC LIMIT 1");
+            $stmt = $pdo->prepare("SELECT * FROM parking_slots WHERE status = 'free' AND zone_type = 'general' LIMIT 1");
+            $fee = 50;
+            $co2 = 1.5;
         }
+
         $stmt->execute();
         $slot = $stmt->fetch();
 
         if (!$slot) {
-            echo json_encode(['success' => false, 'message' => 'Parking Capacity Reached']);
+            echo json_encode(['success' => false, 'message' => 'Requested zone full.']);
             exit;
         }
 
-        // Bike in Premium Flag
-        if ($vehicle_type === 'bike' && $slot['zone_type'] === 'premium') {
-            $status_override = 'inefficient';
-            $pdo->query("UPDATE soc_stats SET alerts_triggered = alerts_triggered + 1 WHERE id = 1");
-        }
+        // Apply
+        $pdo->prepare("UPDATE parking_slots SET status = ?, current_vehicle = ? WHERE id = ?")
+            ->execute([$status, $vehicle_type, $slot['id']]);
+
+        $pdo->prepare("UPDATE soc_stats SET total_entries = total_entries + 1, revenue = revenue + ?, co2_saved = co2_saved + ? WHERE id = 1")
+            ->execute([$fee, $co2]);
+
+        echo json_encode(['success' => true, 'message' => "Parked in {$slot['slot_id']}"]);
+        exit;
     }
 
-    // Update Slot
-    $stmt = $pdo->prepare("UPDATE parking_slots SET status = ?, current_vehicle = ? WHERE id = ?");
-    $stmt->execute([$status_override, $vehicle_type, $slot['id']]);
+    if ($action === 'exit') {
+        $slot_id = $_POST['slot_id'] ?? null;
+        if ($slot_id) {
+            $pdo->prepare("UPDATE parking_slots SET status = 'free', current_vehicle = NULL WHERE slot_id = ?")
+                ->execute([$slot_id]);
+            echo json_encode(['success' => true, 'message' => "Slot {$slot_id} freed."]);
+        } else {
+            echo json_encode(['success' => false, 'message' => "Slot ID required."]);
+        }
+        exit;
+    }
 
-    // Update Stats
-    $pdo->query("UPDATE soc_stats SET total_entries = total_entries + 1 WHERE id = 1");
+    if ($action === 'reset') {
+        $pdo->query("UPDATE parking_slots SET status = 'free', current_vehicle = NULL");
+        $pdo->query("UPDATE soc_stats SET total_entries = 0, revenue = 0, co2_saved = 0 WHERE id = 1");
+        echo json_encode(['success' => true]);
+        exit;
+    }
 
-    echo json_encode([
-        'success' => true,
-        'message' => "Vehicle {$vehicle_type} cleared for {$slot['slot_id']} (" . strtoupper($slot['zone_type']) . ")",
-        'status' => $status_override
-    ]);
-    exit;
-}
-
-if ($action === 'reset') {
-    $pdo->query("UPDATE parking_slots SET status = 'free', current_vehicle = NULL");
-    $pdo->query("UPDATE soc_stats SET total_entries = 0, alerts_triggered = 0 WHERE id = 1");
-    echo json_encode(['success' => true]);
-    exit;
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
 }
 ?>

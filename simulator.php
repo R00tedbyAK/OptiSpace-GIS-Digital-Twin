@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OptiSpace | Airport Command Node</title>
+    <title>OptiSpace | Command Simulator</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;600&display=swap"
         rel="stylesheet">
     <style>
@@ -25,121 +25,108 @@
             margin: 0;
         }
 
-        .command-panel {
+        .sim-card {
             background: var(--panel);
             border: 2px solid rgba(0, 242, 255, 0.2);
             padding: 40px;
             border-radius: 10px;
-            width: 400px;
+            width: 380px;
             text-align: center;
-            box-shadow: 0 0 50px rgba(0, 242, 255, 0.1);
         }
 
         h1 {
             font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: var(--accent);
-            letter-spacing: 2px;
             margin-bottom: 30px;
+            letter-spacing: 1px;
         }
 
-        .btn-group {
+        .group {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
         }
 
         button {
             background: transparent;
             border: 1px solid var(--accent);
             color: var(--accent);
-            padding: 15px;
+            padding: 14px;
             font-family: 'Orbitron', sans-serif;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             transition: 0.3s;
-            text-transform: uppercase;
         }
 
         button:hover {
             background: var(--accent);
             color: #000;
-            box-shadow: 0 0 20px var(--accent);
+            box-shadow: 0 0 15px var(--accent);
         }
 
-        .reset-btn {
+        .reset {
             border-color: #ff3e3e;
             color: #ff3e3e;
             margin-top: 20px;
             font-size: 0.6rem;
         }
 
-        .reset-btn:hover {
+        .reset:hover {
             background: #ff3e3e;
             color: #fff;
-            box-shadow: 0 0 20px #ff3e3e;
         }
 
-        #terminal {
-            margin-top: 30px;
+        #log {
+            margin-top: 25px;
             background: #000;
-            padding: 15px;
+            padding: 12px;
             font-family: monospace;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-align: left;
-            height: 100px;
+            height: 80px;
             overflow-y: auto;
-            border: 1px solid #333;
             color: #00ff88;
+            border: 1px solid #333;
         }
     </style>
 </head>
 
 <body>
-    <div class="command-panel">
-        <h1>OPTISPACE // AIRPORT COMMAND NODE</h1>
-        <div class="btn-group">
-            <button onclick="sendVehicle('suv')">VIP SUV Arrival (Zone A)</button>
-            <button onclick="sendVehicle('car')">General Car Entry (Zone B)</button>
-            <button onclick="sendVehicle('truck')">Logistics Truck Entry (Zone L)</button>
-            <button onclick="sendVehicle('bike')" style="border-style: dashed;">Unregistered Bike (Zone Audit)</button>
+    <div class="sim-card">
+        <h1>OPTISPACE GROUND SIMULATOR</h1>
+        <div class="group">
+            <button onclick="entry('suv')">SUV Arrival (Premium)</button>
+            <button onclick="entry('car')">Car Arrival (General)</button>
+            <button onclick="entry('truck')">Truck Arrival (Logistics)</button>
         </div>
-        <button class="reset-btn" onclick="resetSim()">RESET GROUND LOGISTICS</button>
-        <div id="terminal">> SYSTEM STANDBY...</div>
+        <button class="reset" onclick="resetSim()">RESET ALL SYSTEMS</button>
+        <div id="log">> STANDBY...</div>
     </div>
 
     <script>
-        const terminal = document.getElementById('terminal');
+        const logBox = document.getElementById('log');
 
-        function log(msg, color = '#00ff88') {
-            const span = document.createElement('div');
-            span.style.color = color;
-            span.innerText = `> ${new Date().toLocaleTimeString()}: ${msg}`;
-            terminal.prepend(span);
+        function print(msg, color = '#00ff88') {
+            const div = document.createElement('div');
+            div.style.color = color;
+            div.innerText = `> ${new Date().toLocaleTimeString()}: ${msg}`;
+            logBox.prepend(div);
         }
 
-        async function sendVehicle(type) {
-            log(`INITIATING ${type.toUpperCase()} ENTRY PROTOCOL...`, '#fff');
-            const formData = new FormData();
-            formData.append('vehicle_type', type);
-
+        async function entry(type) {
+            const form = new FormData();
+            form.append('vehicle_type', type);
             try {
-                const r = await fetch('logic.php?action=enter', { method: 'POST', body: formData });
+                const r = await fetch('logic.php?action=entry', { method: 'POST', body: form });
                 const d = await r.json();
-                if (d.success) {
-                    log(d.message, d.status === 'inefficient' ? '#ffbe00' : '#00ff88');
-                } else {
-                    log(d.message, '#ff3e3e');
-                }
-            } catch (e) {
-                log("COMMUNICATION ERROR", "#ff3e3e");
-            }
+                print(d.message, d.success ? '#00ff88' : '#ff3e3e');
+            } catch (e) { print("COMM FAIL", "#ff3e3e"); }
         }
 
         async function resetSim() {
-            if (!confirm("Confirm hard reset of TRV Terminal 2 ground data?")) return;
             await fetch('logic.php?action=reset');
-            log("LOGISTICS RESET COMPLETE", "#ff3e3e");
+            print("SIMULATION RESET", "#ff3e3e");
         }
     </script>
 </body>

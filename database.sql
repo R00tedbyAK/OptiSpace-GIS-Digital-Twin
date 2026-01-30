@@ -1,9 +1,10 @@
--- Create Database
-CREATE DATABASE IF NOT EXISTS `optispace_airport_db`;
-USE `optispace_airport_db`;
+-- Reset Database
+DROP DATABASE IF EXISTS `optispace_db`;
+CREATE DATABASE `optispace_db`;
+USE `optispace_db`;
 
 -- Parking Slots Table
-CREATE TABLE IF NOT EXISTS `parking_slots` (
+CREATE TABLE `parking_slots` (
     `id` INT AUTO_INCREMENT PRIMARY KEY,
     `slot_id` VARCHAR(10) NOT NULL,
     `slot_name` VARCHAR(50) NOT NULL,
@@ -24,10 +25,11 @@ INSERT INTO `parking_slots` (`slot_id`, `slot_name`, `zone_type`, `lat`, `lng`) 
 ('L-01', 'Logistics Bay', 'logistics', 8.487900, 76.922900);
 
 -- Global Stats for SOC
-CREATE TABLE IF NOT EXISTS `soc_stats` (
+CREATE TABLE `soc_stats` (
     `id` INT PRIMARY KEY DEFAULT 1,
     `total_entries` INT DEFAULT 0,
-    `alerts_triggered` INT DEFAULT 0
+    `revenue` DECIMAL(15, 2) DEFAULT 0.00,
+    `co2_saved` DECIMAL(15, 2) DEFAULT 0.00
 );
 
-INSERT INTO `soc_stats` (`id`) VALUES (1) ON DUPLICATE KEY UPDATE `id`=`id`;
+INSERT INTO `soc_stats` (`id`) VALUES (1);
