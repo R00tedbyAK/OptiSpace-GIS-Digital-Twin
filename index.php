@@ -5,21 +5,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OptiSpace | Decision Support System v11</title>
+    <title>Smart Parking System | OptiSpace</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono:wght@400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
     <style>
         :root {
-            --accent: #00f2ff;
-            --glass: rgba(0, 0, 0, 0.8);
-            --border: rgba(0, 242, 255, 0.25);
-            --suv: #FFD700;
-            --logistics: #D000FF;
-            --bike: #00FFFF;
-            --free: #00FF00;
-            --occupied: #FF0000;
+            /* Muted Color Palette */
+            --color-free: #22c55e;
+            --color-occupied: #dc2626;
+            --color-bike: #eab308;
+            --color-general: #3b82f6;
+            --color-suv: #a855f7;
+            --color-logistics: #a855f7;
+            --color-active: #06b6d4;
+            --color-warning: #f97316;
+
+            /* Theme */
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #151b2e;
+            --glass: rgba(15, 20, 35, 0.85);
+            --border: rgba(100, 116, 139, 0.2);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            /* Spacing Grid */
+            --gap-xs: 4px;
+            --gap-sm: 8px;
+            --gap-md: 16px;
+            --gap-lg: 24px;
+            --gap-xl: 32px;
         }
 
         *,
@@ -34,86 +51,269 @@
         body {
             height: 100%;
             overflow: hidden;
-            font-family: 'Roboto Mono', monospace;
-            background: #050709;
-            color: #fff;
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
         }
 
-        /* ZONE A: THE MAP (Full Background) */
+        /* MAP BASE */
         #map {
             position: absolute;
             inset: 0;
             z-index: 1;
+            filter: brightness(0.6) saturate(0.8);
         }
 
-        /* HUD LAYER */
-        .hud {
-            position: fixed;
-            z-index: 1000;
-            pointer-events: auto;
-        }
-
-        .glass {
+        /* GLASS PANELS */
+        .glass-panel {
             background: var(--glass);
             backdrop-filter: blur(12px);
             border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
-        /* ZONE C: TOP BAR (Performance Header) */
-        #top-bar {
+        /* TOP STATUS BAR */
+        #status-bar {
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 60px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 30px;
-            border-bottom: 2px solid var(--border);
+            padding: 0 var(--gap-lg);
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
         }
 
-        .brand {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 1rem;
-            letter-spacing: 2px;
-            color: var(--accent);
-        }
-
-        .metrics {
+        .status-bar-section {
             display: flex;
-            gap: 40px;
+            align-items: center;
+            gap: var(--gap-lg);
         }
 
-        .metric {
-            text-align: right;
+        .app-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: -0.02em;
         }
 
-        .metric-value {
-            font-family: 'Orbitron';
-            font-size: 1rem;
-            display: block;
+        .location-pill {
+            padding: 6px 14px;
+            background: rgba(6, 182, 212, 0.12);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--color-active);
+        }
+
+        .status-metric {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .status-metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .status-metric-label {
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: var(--gap-sm);
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--color-free);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--color-free);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--color-free);
+            animation: breathe 2s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(0.9);
+            }
+        }
+
+        /* LEFT OPERATIONS PANEL */
+        #operations-panel {
+            position: fixed;
+            top: 72px;
+            left: var(--gap-md);
+            width: 340px;
+            max-height: calc(100vh - 160px);
+            padding: var(--gap-lg);
+            z-index: 900;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        #operations-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        #operations-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #operations-panel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .panel-section {
+            margin-bottom: var(--gap-lg);
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: var(--gap-md);
+        }
+
+        /* METRIC CARDS */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--gap-md);
+        }
+
+        .metric-card {
+            padding: var(--gap-md);
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            border-color: var(--color-active);
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.15);
         }
 
         .metric-label {
-            font-size: 0.6rem;
-            color: #888;
+            font-size: 11px;
+            font-weight: 500;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--gap-sm);
         }
 
-        .live-dot {
-            width: 8px;
-            height: 8px;
-            background: #00ff00;
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+
+        .metric-value.green {
+            color: var(--color-free);
+        }
+
+        .metric-value.red {
+            color: var(--color-occupied);
+        }
+
+        /* CAMERA FEEDS */
+        .camera-feed {
+            position: relative;
+            height: 140px;
+            background: #000;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            margin-bottom: var(--gap-md);
+            transition: all 0.3s ease;
+        }
+
+        .camera-feed:hover {
+            border-color: var(--color-active);
+            box-shadow: 0 0 16px rgba(6, 182, 212, 0.2);
+        }
+
+        .camera-feed video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.9) contrast(1.05);
+        }
+
+        .cam-rotate {
+            transform: rotate(180deg);
+        }
+
+        .camera-header {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .camera-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .rec-indicator {
+            width: 6px;
+            height: 6px;
+            background: #ef4444;
             border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-            animation: pulse 1.5s infinite;
-            box-shadow: 0 0 8px #00ff00;
+            animation: pulse-rec 1.5s ease-in-out infinite;
         }
 
-        @keyframes pulse {
+        @keyframes pulse-rec {
 
             0%,
             100% {
@@ -121,64 +321,193 @@
             }
 
             50% {
-                opacity: 0.4;
+                opacity: 0.3;
             }
         }
 
-        /* ZONE C: RIGHT SIDEBAR (Zone Breakdown + Event Log) */
-        #sidebar {
-            top: 80px;
-            right: 20px;
-            bottom: 20px;
-            width: 300px;
-            padding: 20px;
-            border-radius: 8px;
+        .live-badge {
+            padding: 4px 8px;
+            background: rgba(6, 182, 212, 0.2);
+            border: 1px solid var(--color-active);
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--color-active);
+            animation: pulse-live 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-live {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .camera-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.8);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--color-free);
+            text-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+            z-index: 5;
+        }
+
+        .payment-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 8px 16px;
+            background: var(--color-free);
+            color: #000;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 4px;
+            box-shadow: 0 0 24px var(--color-free);
+            display: none;
+            z-index: 10;
+        }
+
+        /* AVAILABILITY LIST */
+        .availability-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap-sm);
+        }
+
+        .availability-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--gap-sm) 0;
+            font-size: 13px;
+        }
+
+        .availability-label {
+            display: flex;
+            align-items: center;
+            gap: var(--gap-sm);
+            color: var(--text-secondary);
+        }
+
+        .color-bullet {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        .availability-count {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* SYSTEM HEALTH */
+        .health-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--gap-sm);
+        }
+
+        .health-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--gap-sm) 0;
+            font-size: 12px;
+        }
+
+        .health-label {
+            color: var(--text-secondary);
+        }
+
+        .health-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 500;
+            color: var(--color-free);
+        }
+
+        .health-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--color-free);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--color-free);
+        }
+
+        /* RIGHT PANEL */
+        #right-panel {
+            position: fixed;
+            top: 72px;
+            right: var(--gap-md);
+            width: 280px;
+            max-height: calc(100vh - 160px);
+            padding: var(--gap-lg);
+            z-index: 900;
             display: flex;
             flex-direction: column;
         }
 
-        .panel-title {
-            font-family: 'Orbitron';
-            font-size: 0.75rem;
-            color: var(--accent);
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
-            letter-spacing: 1px;
+        .revenue-display {
+            text-align: center;
+            padding: var(--gap-lg);
+            background: rgba(6, 182, 212, 0.08);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            border-radius: 8px;
+            margin-bottom: var(--gap-lg);
         }
 
-        .zone-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.75rem;
-            margin-bottom: 10px;
+        .revenue-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: var(--gap-sm);
         }
 
-        .zone-row span:first-child {
-            color: #aaa;
+        .revenue-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--color-active);
         }
 
-        #event-log {
+        .event-log {
             flex: 1;
             overflow-y: auto;
-            margin-top: 20px;
-            border-top: 1px solid var(--border);
-            padding-top: 15px;
+            margin-top: var(--gap-md);
         }
 
         .log-entry {
-            font-size: 0.65rem;
-            color: #bbb;
-            margin-bottom: 10px;
-            padding-left: 10px;
-            border-left: 2px solid var(--accent);
+            padding: var(--gap-sm) 0;
+            padding-left: var(--gap-sm);
+            border-left: 2px solid var(--color-active);
+            margin-bottom: var(--gap-sm);
+            font-size: 11px;
+            color: var(--text-secondary);
             animation: slideIn 0.3s ease-out;
         }
 
         @keyframes slideIn {
             from {
                 opacity: 0;
-                transform: translateX(10px);
+                transform: translateX(8px);
             }
 
             to {
@@ -187,165 +516,229 @@
             }
         }
 
-        /* ZONE B: CCTV PANEL (Bottom-Left) */
-        #cctv-panel {
-            bottom: 20px;
-            left: 20px;
-            width: 340px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .log-time {
+            color: var(--color-active);
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .cam-box {
-            position: relative;
-            height: 150px;
-            background: #000;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            overflow: hidden;
-        }
-
-        .cam-box video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: brightness(0.85) contrast(1.15) grayscale(0.15);
-        }
-
-        .cam-rotate {
-            transform: rotate(180deg);
-        }
-
-        .cam-label {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            font-family: 'Orbitron';
-            font-size: 0.5rem;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 3px 8px;
-            border-radius: 3px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            z-index: 5;
-        }
-
-        .rec-dot {
-            width: 5px;
-            height: 5px;
-            background: #ff0000;
-            border-radius: 50%;
-            animation: pulse 1s infinite;
-        }
-
-        .ar-overlay {
-            position: absolute;
+        /* BOTTOM LEGEND */
+        #legend-bar {
+            position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 8px 10px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.7rem;
-            color: #00ff00;
-            font-weight: bold;
-            z-index: 5;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--gap-lg);
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border);
+            z-index: 1000;
         }
 
-        .payment-flash {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #00ff00;
-            color: #000;
-            padding: 8px 12px;
-            font-family: 'Orbitron';
-            font-size: 0.65rem;
-            font-weight: bold;
-            display: none;
-            z-index: 10;
-            box-shadow: 0 0 20px #00ff00;
-            white-space: nowrap;
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--gap-sm);
+            font-size: 12px;
+            color: var(--text-secondary);
         }
 
-        /* DATA PACKET ANIMATION */
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* MAP SLOT ANIMATIONS */
+        .leaflet-interactive {
+            transition: fill 0.3s ease, stroke 0.3s ease !important;
+        }
+
+        /* DATA PACKET */
         .data-trail {
-            opacity: 0.25;
+            opacity: 0.3;
         }
 
         .data-packet {
-            filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 10px var(--accent));
+            filter: drop-shadow(0 0 6px #fff) drop-shadow(0 0 10px var(--color-active));
         }
     </style>
 </head>
 
 <body>
-    <!-- ZONE A: THE MAP -->
     <div id="map"></div>
 
-    <!-- ZONE C: TOP BAR -->
-    <div class="hud glass" id="top-bar">
-        <div class="brand">OPTISPACE // COMMAND CENTER</div>
-        <div class="metrics">
-            <div class="metric">
-                <span class="metric-label">DAILY REVENUE</span>
-                <span class="metric-value">₹ <span id="rev-counter">0</span></span>
+    <!-- TOP STATUS BAR -->
+    <div id="status-bar">
+        <div class="status-bar-section">
+            <div class="app-title">Smart Parking System</div>
+        </div>
+        <div class="status-bar-section">
+            <div class="location-pill">TRV Airport Parking Lot</div>
+        </div>
+        <div class="status-bar-section">
+            <div class="status-metric">
+                <div class="status-metric-value">₹ <span id="header-revenue">0</span></div>
+                <div class="status-metric-label">Revenue Today</div>
             </div>
-            <div class="metric">
-                <span class="metric-label">SITE OCCUPANCY</span>
-                <span class="metric-value"><span id="occ-counter">0</span> / <span id="total-slots">0</span></span>
+            <div class="status-metric">
+                <div class="status-metric-value"><span id="header-util">0</span>%</div>
+                <div class="status-metric-label">Utilization</div>
             </div>
-            <div class="metric">
-                <span class="metric-label">STATUS</span>
-                <span class="metric-value"><span class="live-dot"></span>LIVE</span>
+            <div class="system-status">
+                <div class="status-dot"></div>
+                SYSTEM ONLINE
             </div>
         </div>
     </div>
 
-    <!-- ZONE C: RIGHT SIDEBAR -->
-    <div class="hud glass" id="sidebar">
-        <div class="panel-title">ZONE BREAKDOWN</div>
-        <div class="zone-row"><span>🚗 GENERAL</span><span id="z-gen">0 / 0</span></div>
-        <div class="zone-row" style="color: var(--suv)"><span>🚙 SUV (PREMIUM)</span><span id="z-suv">0 / 0</span></div>
-        <div class="zone-row" style="color: var(--logistics)"><span>🚚 LOGISTICS</span><span id="z-log">0 / 0</span>
+    <!-- LEFT OPERATIONS PANEL -->
+    <div id="operations-panel" class="glass-panel">
+        <!-- SECTION A: METRICS -->
+        <div class="panel-section">
+            <div class="section-title">Live Metrics</div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Free Slots</div>
+                    <div class="metric-value green" id="free-count">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Occupied</div>
+                    <div class="metric-value red" id="occ-count">0</div>
+                </div>
+            </div>
         </div>
-        <div class="zone-row" style="color: var(--bike)"><span>🏍️ BIKES</span><span id="z-bike">0 / 0</span></div>
 
-        <div class="panel-title" style="margin-top: 25px;">LIVE EVENT LOG</div>
-        <div id="event-log"></div>
+        <!-- SECTION B: CAMERAS -->
+        <div class="panel-section">
+            <div class="section-title">Camera Feeds</div>
+
+            <!-- CAM-01 ENTRY -->
+            <div class="camera-feed">
+                <div class="camera-header">
+                    <div class="camera-label">
+                        <div class="rec-indicator"></div>
+                        CAM-01 FRONT
+                    </div>
+                    <div class="live-badge">LIVE</div>
+                </div>
+                <video id="vid-entry" src="cctv/VID1.mp4" autoplay muted loop></video>
+                <div class="camera-overlay" id="entry-overlay">> SCANNING...</div>
+            </div>
+
+            <!-- CAM-02 EXIT -->
+            <div class="camera-feed">
+                <div class="camera-header">
+                    <div class="camera-label">
+                        <div class="rec-indicator"></div>
+                        CAM-02 REAR
+                    </div>
+                    <div class="live-badge">LIVE</div>
+                </div>
+                <div class="payment-overlay" id="payment-flash">✔ PAYMENT RECEIVED</div>
+                <video class="cam-rotate" id="vid-exit" src="cctv/VID2.mp4" autoplay muted loop></video>
+                <div class="camera-overlay" id="exit-overlay">> MONITORING...</div>
+            </div>
+        </div>
+
+        <!-- SECTION C: AVAILABILITY -->
+        <div class="panel-section">
+            <div class="section-title">Availability by Type</div>
+            <div class="availability-list">
+                <div class="availability-item">
+                    <div class="availability-label">
+                        <div class="color-bullet" style="background: var(--color-bike)"></div>
+                        Bike Zone
+                    </div>
+                    <div class="availability-count" id="avail-bike">0</div>
+                </div>
+                <div class="availability-item">
+                    <div class="availability-label">
+                        <div class="color-bullet" style="background: var(--color-general)"></div>
+                        General
+                    </div>
+                    <div class="availability-count" id="avail-gen">0</div>
+                </div>
+                <div class="availability-item">
+                    <div class="availability-label">
+                        <div class="color-bullet" style="background: var(--color-suv)"></div>
+                        SUV / Premium
+                    </div>
+                    <div class="availability-count" id="avail-suv">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION D: SYSTEM HEALTH -->
+        <div class="panel-section">
+            <div class="section-title">System Health</div>
+            <div class="health-list">
+                <div class="health-item">
+                    <div class="health-label">Gate Sensors</div>
+                    <div class="health-status">Online</div>
+                </div>
+                <div class="health-item">
+                    <div class="health-label">CCTV Array</div>
+                    <div class="health-status">2 / 2 Active</div>
+                </div>
+                <div class="health-item">
+                    <div class="health-label">AI Detection</div>
+                    <div class="health-status">Running</div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- ZONE B: CCTV PANEL -->
-    <div class="hud" id="cctv-panel">
-        <!-- EXIT CAM (Top, Rotated) -->
-        <div class="cam-box">
-            <div class="cam-label"><span class="rec-dot"></span> CAM-02 [EXIT]</div>
-            <div class="payment-flash" id="pay-flash">✔ PAYMENT RECEIVED: ₹150</div>
-            <video class="cam-rotate" id="vid-exit" src="cctv/VID2.mp4" autoplay muted loop></video>
-            <div class="ar-overlay" id="exit-ar">> MONITORING EXIT LANE...</div>
+    <!-- RIGHT PANEL -->
+    <div id="right-panel" class="glass-panel">
+        <div class="section-title">Revenue Tracker</div>
+        <div class="revenue-display">
+            <div class="revenue-label">Today's Revenue</div>
+            <div class="revenue-value">₹ <span id="revenue">0</span></div>
         </div>
-        <!-- ENTRY CAM (Bottom, Normal) -->
-        <div class="cam-box">
-            <div class="cam-label"><span class="rec-dot"></span> CAM-01 [ENTRY]</div>
-            <video id="vid-entry" src="cctv/VID1.mp4" autoplay muted loop></video>
-            <div class="ar-overlay" id="entry-ar">> SCANNING ARRIVALS...</div>
+
+        <div class="section-title">Live Event Log</div>
+        <div class="event-log" id="event-log"></div>
+    </div>
+
+    <!-- BOTTOM LEGEND -->
+    <div id="legend-bar">
+        <div class="legend-item">
+            <div class="legend-color" style="background: var(--color-free)"></div>
+            Free
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: var(--color-occupied)"></div>
+            Occupied
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: var(--color-bike)"></div>
+            Bike
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: var(--color-general)"></div>
+            General
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background: var(--color-suv)"></div>
+            SUV / Premium
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // === ZONE A: MAP INITIALIZATION ===
         const map = L.map('map', {
             center: [8.488533, 76.921948],
             zoom: 19,
             zoomControl: false,
-            attributionControl: false
+            attributionControl: false,
+            scrollWheelZoom: true,
+            doubleClickZoom: false
         });
+
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
 
         const GATE = [8.488533, 76.921948];
@@ -353,11 +746,10 @@
         let slotsData = [];
         let totalRevenue = 0;
 
-        // Force 0.5x Playback Speed
+        // Force 0.5x playback
         document.getElementById('vid-entry').playbackRate = 0.5;
         document.getElementById('vid-exit').playbackRate = 0.5;
 
-        // === DATA LOADING ===
         async function init() {
             const res = await fetch('logic.php?action=fetch_status');
             const data = await res.json();
@@ -365,35 +757,54 @@
 
             data.slots.forEach(s => {
                 let color = s.status === 'free' ?
-                    (s.zone_type === 'suv' ? '#FFD700' : s.zone_type === 'logistics' ? '#D000FF' : s.zone_type === 'bike' ? '#00FFFF' : '#00FF00')
-                    : '#FF0000';
+                    (s.zone_type === 'suv' ? '#a855f7' : s.zone_type === 'bike' ? '#eab308' : s.zone_type === 'logistics' ? '#a855f7' : '#22c55e')
+                    : '#dc2626';
 
                 const m = L.circle([parseFloat(s.lat), parseFloat(s.lng)], {
-                    radius: 2.5, fillColor: color, fillOpacity: 0.9, color: color, weight: 1
+                    radius: 2.5,
+                    fillColor: color,
+                    fillOpacity: 0.85,
+                    color: color,
+                    weight: 1
                 }).addTo(map);
+
                 slotMarkers[s.slot_id] = { m, type: s.zone_type };
             });
 
             updateHUD();
             startAutopilot();
+            pushLog('System initialized successfully');
         }
 
-        // === HUD UPDATES ===
         function updateHUD() {
-            document.getElementById('rev-counter').innerText = totalRevenue.toLocaleString();
-            let occ = slotsData.filter(s => s.status !== 'free').length;
-            document.getElementById('occ-counter').innerText = occ;
-            document.getElementById('total-slots').innerText = slotsData.length;
+            const free = slotsData.filter(s => s.status === 'free');
+            const occ = slotsData.filter(s => s.status !== 'free');
+            const util = slotsData.length > 0 ? Math.round((occ.length / slotsData.length) * 100) : 0;
 
-            let zones = { general: { o: 0, t: 0 }, suv: { o: 0, t: 0 }, logistics: { o: 0, t: 0 }, bike: { o: 0, t: 0 } };
-            slotsData.forEach(s => {
-                zones[s.zone_type].t++;
-                if (s.status !== 'free') zones[s.zone_type].o++;
-            });
-            document.getElementById('z-gen').innerText = `${zones.general.o} / ${zones.general.t}`;
-            document.getElementById('z-suv').innerText = `${zones.suv.o} / ${zones.suv.t}`;
-            document.getElementById('z-log').innerText = `${zones.logistics.o} / ${zones.logistics.t}`;
-            document.getElementById('z-bike').innerText = `${zones.bike.o} / ${zones.bike.t}`;
+            animateCounter('free-count', free.length);
+            animateCounter('occ-count', occ.length);
+
+            document.getElementById('header-revenue').innerText = totalRevenue.toLocaleString();
+            document.getElementById('header-util').innerText = util;
+            document.getElementById('revenue').innerText = totalRevenue.toLocaleString();
+
+            document.getElementById('avail-bike').innerText = free.filter(s => s.zone_type === 'bike').length;
+            document.getElementById('avail-suv').innerText = free.filter(s => s.zone_type === 'suv').length;
+            document.getElementById('avail-gen').innerText = free.filter(s => s.zone_type === 'general').length;
+        }
+
+        function animateCounter(id, target) {
+            const el = document.getElementById(id);
+            const current = parseInt(el.innerText) || 0;
+            if (current === target) return;
+
+            const step = target > current ? 1 : -1;
+            let value = current;
+            const interval = setInterval(() => {
+                value += step;
+                el.innerText = value;
+                if (value === target) clearInterval(interval);
+            }, 30);
         }
 
         function pushLog(msg) {
@@ -401,23 +812,24 @@
             const entry = document.createElement('div');
             entry.className = 'log-entry';
             const time = new Date().toLocaleTimeString([], { hour12: false });
-            entry.innerHTML = `<span style="color:var(--accent)">[${time}]</span> ${msg}`;
+            entry.innerHTML = `<span class="log-time">[${time}]</span> ${msg}`;
             log.prepend(entry);
-            if (log.children.length > 25) log.lastChild.remove();
+            if (log.children.length > 20) log.lastChild.remove();
         }
 
-        // === AUTOPILOT ENGINE ===
         function startAutopilot() {
-            const entryAR = document.getElementById('entry-ar');
-            const exitAR = document.getElementById('exit-ar');
+            const entryOverlay = document.getElementById('entry-overlay');
+            const exitOverlay = document.getElementById('exit-overlay');
 
-            // Entry Loop (3s)
+            // Entry Loop
             setInterval(async () => {
-                entryAR.innerText = "> SCANNING...";
-                await sleep(800);
-                entryAR.innerText = "> CLASS: SUV";
-                await sleep(800);
-                entryAR.innerText = "> ALLOCATING SLOT...";
+                entryOverlay.innerText = "> SCANNING...";
+                await sleep(700);
+                const types = ['SUV', 'SEDAN', 'BIKE', 'HATCHBACK'];
+                const vehicleType = types[Math.floor(Math.random() * types.length)];
+                entryOverlay.innerText = `> CLASS: ${vehicleType}`;
+                await sleep(700);
+                entryOverlay.innerText = "> ALLOCATING SLOT...";
 
                 const free = slotsData.filter(s => s.status === 'free');
                 if (free.length > 0) {
@@ -426,11 +838,12 @@
                 }
             }, 3000);
 
-            // Exit Loop (10s)
+            // Exit Loop
             setInterval(async () => {
-                exitAR.innerText = "> VEHICLE EXITING...";
-                await sleep(1500);
-                exitAR.innerText = "> CALCULATING FEE...";
+                exitOverlay.innerText = "> VEHICLE DETECTED...";
+                await sleep(1000);
+                exitOverlay.innerText = "> CALCULATING FEE...";
+                await sleep(1000);
 
                 const occ = slotsData.filter(s => s.status !== 'free');
                 if (occ.length > 0) {
@@ -440,57 +853,81 @@
             }, 10000);
         }
 
-        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+        function sleep(ms) {
+            return new Promise(r => setTimeout(r, ms));
+        }
 
-        // === DATA PACKET ANIMATION ===
         function fireDataPacket(slot) {
             const start = L.latLng(GATE);
             const end = L.latLng(slot.lat, slot.lng);
-            const trail = L.polyline([start, start], { color: '#00f2ff', weight: 1, className: 'data-trail' }).addTo(map);
-            const packet = L.circleMarker(start, { radius: 3, fillColor: '#fff', color: '#fff', fillOpacity: 1, className: 'data-packet' }).addTo(map);
+            const trail = L.polyline([start, start], {
+                color: '#06b6d4',
+                weight: 1,
+                className: 'data-trail'
+            }).addTo(map);
+
+            const packet = L.circleMarker(start, {
+                radius: 3,
+                fillColor: '#fff',
+                color: '#fff',
+                fillOpacity: 1,
+                className: 'data-packet'
+            }).addTo(map);
 
             const startTime = performance.now();
             const duration = 1200;
 
             const animate = (time) => {
                 const p = Math.min((time - startTime) / duration, 1);
-                const currentPos = [start.lat + (end.lat - start.lat) * p, start.lng + (end.lng - start.lng) * p];
-                packet.setLatLng(currentPos);
-                trail.setLatLngs([start, currentPos]);
+                const pos = [
+                    start.lat + (end.lat - start.lat) * p,
+                    start.lng + (end.lng - start.lng) * p
+                ];
+                packet.setLatLng(pos);
+                trail.setLatLngs([start, pos]);
 
                 if (p < 1) {
                     requestAnimationFrame(animate);
                 } else {
                     map.removeLayer(trail);
                     map.removeLayer(packet);
-                    slotMarkers[slot.slot_id].m.setStyle({ fillColor: '#FF0000', color: '#FF0000' });
+
+                    // Smooth color transition
+                    slotMarkers[slot.slot_id].m.setStyle({
+                        fillColor: '#dc2626',
+                        color: '#dc2626'
+                    });
+
                     slot.status = 'occupied';
-                    pushLog(`${slot.slot_name} : ALLOCATED`);
+                    pushLog(`${slot.slot_name} allocated successfully`);
                     updateHUD();
                 }
             };
             requestAnimationFrame(animate);
         }
 
-        // === EXIT HANDLER ===
         function handleExit(slot) {
-            const flash = document.getElementById('pay-flash');
-            const exitAR = document.getElementById('exit-ar');
+            const flash = document.getElementById('payment-flash');
+            const exitOverlay = document.getElementById('exit-overlay');
             const m = slotMarkers[slot.slot_id].m;
 
+            // White flash on map
             m.setStyle({ fillColor: '#fff', color: '#fff' });
 
             setTimeout(() => {
-                let color = slot.zone_type === 'suv' ? '#FFD700' : slot.zone_type === 'logistics' ? '#D000FF' : slot.zone_type === 'bike' ? '#00FFFF' : '#00FF00';
+                let color = slot.zone_type === 'suv' ? '#a855f7' :
+                    slot.zone_type === 'bike' ? '#eab308' :
+                        slot.zone_type === 'logistics' ? '#a855f7' : '#22c55e';
+
                 m.setStyle({ fillColor: color, color: color });
                 slot.status = 'free';
                 totalRevenue += 150;
 
-                exitAR.innerText = "> PAYMENT: RECEIVED";
+                exitOverlay.innerText = "> PAYMENT: ₹150 OK";
                 flash.style.display = 'block';
                 setTimeout(() => flash.style.display = 'none', 1500);
 
-                pushLog(`${slot.slot_name} : VACATED (+₹150)`);
+                pushLog(`${slot.slot_name} vacated • Payment ₹150 received`);
                 updateHUD();
             }, 1000);
         }
